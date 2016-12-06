@@ -1,0 +1,3289 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Trie-Grid.
+# 
+# Trie-Grid is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Trie-Grid is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Trie-Grid.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# trie test suite
+#
+$ . ~/regtest2.sh
+$ alias trie-regtest='regtest2-selftest -f test-trie.txt -B'
+
+# list all available tests:
+$ regtest -N
+prereq
+help
+empty
+sort-only
+unique-only
+quoted
+sorted
+unique
+base
+ascii
+letters
+compact
+wide
+
+# run all tests:
+$ regtest -A
+
+--[ prereq ]--------------------------------------------------------------------
+
+$ test -x ./trie
+$ print() { printf '%s\n' "$@"; }
+$
+
+--[ help ]----------------------------------------------------------------------
+
+$ ./trie --help
+usage: trie [OPTION]...
+where the options are:
+  -L|--load-only       action: only load input and nothing more
+  -S|--sort-only       action: only sort input and print it out
+  -G|--gen-trie        action: fully process input (load it, sort it if needed),
+                         than generate the respective trie on stdout (default)
+  -C|--check-sorted    check that input is sorted properly
+  -s|--sorted          sort type: input is sorted but not uniquely
+  -u|--unique          sort type: input is sorted uniquely
+  -U|--unsorted        sort type: input is not sorted (default)
+     --quick3way       sort algorithm: use 'quick3way' algorithm (default)
+     --stdc++          sort algorithm: use standard C++ library algorithm
+  -c|--compact         gen type: generate compact trie on output
+  -w|--wide            gen type: generate wide trie on output (default)
+     --c++iostreams    input lib: use C++ I/O Streams library (default)
+     --cstdio          input lib: use C Standard I/O library
+     --append-grid     input algorithm: use 'append-grid' algorithm (default)
+     --grow-grid       input algorithm: use 'grow-grid' algorithm
+     --[no-]sync-with-stdio
+                       keep C++ streams in sync with C streams or
+                         otherwise do not (default not)
+     --timings [TYPE]  print out on stderr the real/user/system times
+                         spent executing the main inner tasks if TYPE is
+                         given as 'ctime' or 'utime'; 'ctime' uses 'times'
+                         library call, while 'utime' uses 'gettimeofday'
+                         and 'getrusage' tandem; when the arg is ommited
+                         use 'ctime'; default is 'none'
+     --utime-prec NUM  when printing out timings of type 'utime', compute
+                         the fractional parts with the given precision
+                         (valid range: 3-6; default: 3)
+     --grid-size NUM   use NUM as the initial size of the grid buffer;
+                         the default value is 1024
+     --buf-size NUM    use NUM as the initial size of the input buffer;
+                         the default value is 1024
+  -q|--[no-]quote      when sorting only, print out quoted strings
+                         or otherwise do not (default not)
+  -D|--[no-]dots       put indenting dots in structure print outs
+                         or otherwise do not (default not)
+  -d|--[no-]debug      print some debugging output or otherwise
+                         do not print debugging output at all (default)
+     --[no-]dump-backtrace
+                       print out the backtrace of the program on fatal error
+                         or otherwise do not (default not)
+     --dump-env[iron]-vars
+                       print environment vars and exit
+     --dump-options    print options and exit
+  -v|--version         print version numbers and exit
+  -?|--help            display this help info and exit
+$ env -i ./trie --dump-opt
+action:          gen-trie
+input-lib:       c++iostreams
+input-algorithm: append-grid
+sync-with-stdio: no
+sort-algorithm:  quick3way
+check-sorted:    no
+sort-type:       unsorted
+gen-type:        wide
+grid-size:       1024
+buf-size:        1024
+timings:         none
+utime-prec:      3
+quote:           no
+dots:            no
+debug:           no
+dump-backtrace:  no
+argc:            0
+$ env -i ./trie --dump-env
+TRIE_INPUT_LIB:  -
+TRIE_INPUT_ALGO: -
+TRIE_SORT_ALGO:  -
+TRIE_TIMINGS:    -
+TRIE_UTIME_PREC: -
+TRIE_GRID_SIZE:  -
+TRIE_BUF_SIZE:   -
+TRIE_DUMP_BACKTRACE:
+                 -
+$ TRIE_INPUT_LIB=cstdio TRIE_INPUT_ALGO=grow-grid TRIE_SORT_ALGO=stdc++ TRIE_TIMINGS=utime TRIE_UTIME_PREC=6 TRIE_GRID_SIZE=2048 TRIE_BUF_SIZE=4096 TRIE_DUMP_BACKTRACE=yes ./trie --dump-env --dump-opt
+TRIE_INPUT_LIB:  cstdio
+TRIE_INPUT_ALGO: grow-grid
+TRIE_SORT_ALGO:  stdc++
+TRIE_TIMINGS:    utime
+TRIE_UTIME_PREC: 6
+TRIE_GRID_SIZE:  2048
+TRIE_BUF_SIZE:   4096
+TRIE_DUMP_BACKTRACE:
+                 yes
+action:          gen-trie
+input-lib:       cstdio
+input-algorithm: grow-grid
+sync-with-stdio: no
+sort-algorithm:  stdc++
+check-sorted:    no
+sort-type:       unsorted
+gen-type:        wide
+grid-size:       2048
+buf-size:        4096
+timings:         utime
+utime-prec:      6
+quote:           no
+dots:            no
+debug:           no
+dump-backtrace:  yes
+argc:            0
+$ TRIE_INPUT_LIB=cstdio TRIE_INPUT_ALGO=grow-grid TRIE_SORT_ALGO=stdc++ TRIE_TIMINGS=utime TRIE_UTIME_PREC=6 TRIE_GRID_SIZE=2048 TRIE_BUF_SIZE=4096 TRIE_DUMP_BACKTRACE=yes ./trie --dump-env
+TRIE_INPUT_LIB:  cstdio
+TRIE_INPUT_ALGO: grow-grid
+TRIE_SORT_ALGO:  stdc++
+TRIE_TIMINGS:    utime
+TRIE_UTIME_PREC: 6
+TRIE_GRID_SIZE:  2048
+TRIE_BUF_SIZE:   4096
+TRIE_DUMP_BACKTRACE:
+                 yes
+$ TRIE_INPUT_LIB=foo TRIE_INPUT_ALGO=bar TRIE_SORT_ALGO=baz TRIE_TIMINGS=boo TRIE_UTIME_PREC=faz TRIE_GRID_SIZE=far TRIE_BUF_SIZE=baa TRIE_DUMP_BACKTRACE=faa ./trie --dump-env
+trie: warning: ignoring invalid value of environment var TRIE_INPUT_LIB: "foo"
+trie: warning: ignoring invalid value of environment var TRIE_INPUT_ALGO: "bar"
+trie: warning: ignoring invalid value of environment var TRIE_SORT_ALGO: "baz"
+trie: warning: ignoring invalid value of environment var TRIE_TIMINGS: "boo"
+trie: warning: ignoring invalid value of environment var TRIE_UTIME_PREC: "faz"
+trie: warning: ignoring invalid value of environment var TRIE_GRID_SIZE: "far"
+trie: warning: ignoring invalid value of environment var TRIE_BUF_SIZE: "baa"
+trie: warning: ignoring invalid value of environment var TRIE_DUMP_BACKTRACE: "faa"
+TRIE_INPUT_LIB:  ?
+TRIE_INPUT_ALGO: ?
+TRIE_SORT_ALGO:  ?
+TRIE_TIMINGS:    ?
+TRIE_UTIME_PREC: ?
+TRIE_GRID_SIZE:  ?
+TRIE_BUF_SIZE:   ?
+TRIE_DUMP_BACKTRACE:
+                 ?
+$
+
+--[ empty ]---------------------------------------------------------------------
+
+$ trie() { ./trie >/dev/null; }
+$ echo -n|trie
+$ print|trie
+trie: error: line #1: tries cannot contain empty keys
+command failed: print|trie
+$ print $'\x0'|trie
+trie: error: line #1: tries cannot contain empty keys
+command failed: print $'\x0'|trie
+$ print ''|trie
+trie: error: line #1: tries cannot contain empty keys
+command failed: print ''|trie
+$ print a ''|trie
+trie: error: line #2: tries cannot contain empty keys
+command failed: print a ''|trie
+$ print a b ''|trie
+trie: error: line #3: tries cannot contain empty keys
+command failed: print a b ''|trie
+$
+
+--[ sort-only ]-----------------------------------------------------------------
+
+$ trie() { ./trie -S -q; }
+$ print b a|trie
+a
+b
+$ print a a b|trie
+a
+a
+b
+$ print a b a|trie
+a
+a
+b
+$ print a b b|trie
+a
+b
+b
+$ print b b a|trie
+a
+b
+b
+$ print a A|trie
+A
+a
+$ prints() { python -c $'\nfrom sys import argv\nfrom sys import stdout\nfrom re import sub\nu = lambda s: sub(r"\\\\x([0-9a-f]{1,2})", lambda m: "%c" % int(m.group(1), 16), s)\nfor a in argv[1:]:\n\tstdout.write(u(a))\n\tstdout.write("\\n")\n' "$@"; }
+$ prints a '\x0' '\xff'|trie
+\x0
+a
+\xff
+$ prints xay 'x\x0y' 'x\xffy'|trie
+x\x0y
+xay
+x\xffy
+$
+
+--[ unique-only ]---------------------------------------------------------------
+
+$ trie() { ./trie -Su; }
+$ print b a|trie
+a
+b
+$ print a a b|trie
+a
+b
+$ print a b a|trie
+a
+b
+$ print a b b|trie
+a
+b
+$ print b b a|trie
+a
+b
+$ print a A|trie
+A
+a
+$
+
+--[ quoted ]--------------------------------------------------------------------
+
+$ ascii() { python -c $'\ns = ""\nfor i in range(256):\n\tif i in [ord("\\n")]:\n\t\ti = 0\n\ts += chr(i)\n\tif len(s) % 16 == 0:\n\t\tprint s\n\t\ts = ""\n'; }
+$ trie() { ./trie -Sq; }
+$ ascii|hexdump -ve '17/1 "%02x " "\n"'
+00 01 02 03 04 05 06 07 08 09 00 0b 0c 0d 0e 0f 0a
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 0a
+20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 0a
+30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 0a
+40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 0a
+50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 0a
+60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 0a
+70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 0a
+80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 0a
+90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f 0a
+a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 aa ab ac ad ae af 0a
+b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 ba bb bc bd be bf 0a
+c0 c1 c2 c3 c4 c5 c6 c7 c8 c9 ca cb cc cd ce cf 0a
+d0 d1 d2 d3 d4 d5 d6 d7 d8 d9 da db dc dd de df 0a
+e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 ea eb ec ed ee ef 0a
+f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fb fc fd fe ff 0a
+$ ascii|shuf|trie
+\x0\x1\x2\x3\x4\x5\x6\x7\x8\t\x0\v\f\r\xe\xf
+\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f
+ !"#$%&\'()*+,-./
+0123456789:;<=>?
+@ABCDEFGHIJKLMNO
+PQRSTUVWXYZ[\\]^_
+`abcdefghijklmno
+pqrstuvwxyz{|}~\x7f
+\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f
+\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f
+\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf
+\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf
+\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf
+\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf
+\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef
+\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff
+$
+
+--[ sorted ]--------------------------------------------------------------------
+
+$ trie() { ./trie -C -s >/dev/null; }
+$ print b a|trie
+trie: error: line #2: input is not sorted: "a"
+command failed: print b a|trie
+$ print a a b|trie
+$ print a b a|trie
+trie: error: line #3: input is not sorted: "a"
+command failed: print a b a|trie
+$ print a b b|trie
+$ print b b a|trie
+trie: error: line #3: input is not sorted: "a"
+command failed: print b b a|trie
+$ print a A|trie
+trie: error: line #2: input is not sorted: "A"
+command failed: print a A|trie
+$
+
+--[ unique ]--------------------------------------------------------------------
+
+$ trie() { ./trie -C -u >/dev/null; }
+$ print b a|trie
+trie: error: line #2: input is not sorted: "a"
+command failed: print b a|trie
+$ print a a b|trie
+trie: error: line #2: input is not uniquely sorted: "a"
+command failed: print a a b|trie
+$ print a b a|trie
+trie: error: line #3: input is not sorted: "a"
+command failed: print a b a|trie
+$ print a b b|trie
+trie: error: line #3: input is not uniquely sorted: "b"
+command failed: print a b b|trie
+$ print b b a|trie
+trie: error: line #3: input is not sorted: "a"
+command failed: print b b a|trie
+$ print a A|trie
+trie: error: line #2: input is not sorted: "A"
+command failed: print a A|trie
+$
+
+--[ base ]----------------------------------------------------------------------
+
+$ print aabc aabd xxx xyz a|sort -u|./trie -u -c
+{
+    "a": "a" {
+        "ab" {
+            "c": "aabc"
+            "d": "aabd"
+        }
+    }
+    "x" {
+        "xx": "xxx"
+        "yz": "xyz"
+    }
+}
+$ print aabc aabd xxx xyz a|shuf|./trie -U -c
+{
+    "a": "a" {
+        "ab" {
+            "c": "aabc"
+            "d": "aabd"
+        }
+    }
+    "x" {
+        "xx": "xxx"
+        "yz": "xyz"
+    }
+}
+$ print aabc aabd xxx xyz a|sort -u|./trie -u -w
+{
+    'a': "a" {
+        'a' {
+            'b' {
+                'c': "aabc"
+                'd': "aabd"
+            }
+        }
+    }
+    'x' {
+        'x' {
+            'x': "xxx"
+        }
+        'y' {
+            'z': "xyz"
+        }
+    }
+}
+$ print aabc aabd xxx xyz a|shuf|./trie -U -w
+{
+    'a': "a" {
+        'a' {
+            'b' {
+                'c': "aabc"
+                'd': "aabd"
+            }
+        }
+    }
+    'x' {
+        'x' {
+            'x': "xxx"
+        }
+        'y' {
+            'z': "xyz"
+        }
+    }
+}
+$
+
+--[ ascii ]---------------------------------------------------------------------
+
+$ ascii() { python -c $'\ns = ""\nfor i in range(256):\n\tif i in [ord("\\n")]:\n\t\ti = 0\n\ts += chr(i)\n\tif len(s) % 16 == 0:\n\t\tprint s\n\t\ts = ""\n'; }
+$ ascii|./trie -c
+{
+    "\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\x00\v\f\r\x0e\x0f": "\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\x00\v\f\r\x0e\x0f"
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f": "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+    " !\"#$%&'()*+,-./": " !\"#$%&'()*+,-./"
+    "0123456789:;<=>?": "0123456789:;<=>?"
+    "@ABCDEFGHIJKLMNO": "@ABCDEFGHIJKLMNO"
+    "PQRSTUVWXYZ[\\]^_": "PQRSTUVWXYZ[\\]^_"
+    "`abcdefghijklmno": "`abcdefghijklmno"
+    "pqrstuvwxyz{|}~\x7f": "pqrstuvwxyz{|}~\x7f"
+    "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f": "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
+    "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f": "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
+    "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf": "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
+    "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf": "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
+    "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf": "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
+    "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf": "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
+    "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef": "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
+    "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff": "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
+}
+$ ascii|./trie -w -D
+{
+.   '\x0' {
+.   .   '\x1' {
+.   .   .   '\x2' {
+.   .   .   .   '\x3' {
+.   .   .   .   .   '\x4' {
+.   .   .   .   .   .   '\x5' {
+.   .   .   .   .   .   .   '\x6' {
+.   .   .   .   .   .   .   .   '\x7' {
+.   .   .   .   .   .   .   .   .   '\x8' {
+.   .   .   .   .   .   .   .   .   .   '\t' {
+.   .   .   .   .   .   .   .   .   .   .   '\x0' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\f' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xe' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xf': "\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\x00\v\f\r\x0e\x0f"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\x10' {
+.   .   '\x11' {
+.   .   .   '\x12' {
+.   .   .   .   '\x13' {
+.   .   .   .   .   '\x14' {
+.   .   .   .   .   .   '\x15' {
+.   .   .   .   .   .   .   '\x16' {
+.   .   .   .   .   .   .   .   '\x17' {
+.   .   .   .   .   .   .   .   .   '\x18' {
+.   .   .   .   .   .   .   .   .   .   '\x19' {
+.   .   .   .   .   .   .   .   .   .   .   '\x1a' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\x1b' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\x1c' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x1d' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x1e' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x1f': "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   ' ' {
+.   .   '!' {
+.   .   .   '"' {
+.   .   .   .   '#' {
+.   .   .   .   .   '$' {
+.   .   .   .   .   .   '%' {
+.   .   .   .   .   .   .   '&' {
+.   .   .   .   .   .   .   .   '\'' {
+.   .   .   .   .   .   .   .   .   '(' {
+.   .   .   .   .   .   .   .   .   .   ')' {
+.   .   .   .   .   .   .   .   .   .   .   '*' {
+.   .   .   .   .   .   .   .   .   .   .   .   '+' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   ',' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '-' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '.' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '/': " !\"#$%&'()*+,-./"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '0' {
+.   .   '1' {
+.   .   .   '2' {
+.   .   .   .   '3' {
+.   .   .   .   .   '4' {
+.   .   .   .   .   .   '5' {
+.   .   .   .   .   .   .   '6' {
+.   .   .   .   .   .   .   .   '7' {
+.   .   .   .   .   .   .   .   .   '8' {
+.   .   .   .   .   .   .   .   .   .   '9' {
+.   .   .   .   .   .   .   .   .   .   .   ':' {
+.   .   .   .   .   .   .   .   .   .   .   .   ';' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '<' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '=' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '>' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '?': "0123456789:;<=>?"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '@' {
+.   .   'A' {
+.   .   .   'B' {
+.   .   .   .   'C' {
+.   .   .   .   .   'D' {
+.   .   .   .   .   .   'E' {
+.   .   .   .   .   .   .   'F' {
+.   .   .   .   .   .   .   .   'G' {
+.   .   .   .   .   .   .   .   .   'H' {
+.   .   .   .   .   .   .   .   .   .   'I' {
+.   .   .   .   .   .   .   .   .   .   .   'J' {
+.   .   .   .   .   .   .   .   .   .   .   .   'K' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'L' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'M' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'N' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'O': "@ABCDEFGHIJKLMNO"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'P' {
+.   .   'Q' {
+.   .   .   'R' {
+.   .   .   .   'S' {
+.   .   .   .   .   'T' {
+.   .   .   .   .   .   'U' {
+.   .   .   .   .   .   .   'V' {
+.   .   .   .   .   .   .   .   'W' {
+.   .   .   .   .   .   .   .   .   'X' {
+.   .   .   .   .   .   .   .   .   .   'Y' {
+.   .   .   .   .   .   .   .   .   .   .   'Z' {
+.   .   .   .   .   .   .   .   .   .   .   .   '[' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\\' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   ']' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '^' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '_': "PQRSTUVWXYZ[\\]^_"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '`' {
+.   .   'a' {
+.   .   .   'b' {
+.   .   .   .   'c' {
+.   .   .   .   .   'd' {
+.   .   .   .   .   .   'e' {
+.   .   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   .   'g' {
+.   .   .   .   .   .   .   .   .   'h' {
+.   .   .   .   .   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'o': "`abcdefghijklmno"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'p' {
+.   .   'q' {
+.   .   .   'r' {
+.   .   .   .   's' {
+.   .   .   .   .   't' {
+.   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   'z' {
+.   .   .   .   .   .   .   .   .   .   .   .   '{' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '|' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '}' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '~' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x7f': "pqrstuvwxyz{|}~\x7f"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\x80' {
+.   .   '\x81' {
+.   .   .   '\x82' {
+.   .   .   .   '\x83' {
+.   .   .   .   .   '\x84' {
+.   .   .   .   .   .   '\x85' {
+.   .   .   .   .   .   .   '\x86' {
+.   .   .   .   .   .   .   .   '\x87' {
+.   .   .   .   .   .   .   .   .   '\x88' {
+.   .   .   .   .   .   .   .   .   .   '\x89' {
+.   .   .   .   .   .   .   .   .   .   .   '\x8a' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\x8b' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\x8c' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x8d' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x8e' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x8f': "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\x90' {
+.   .   '\x91' {
+.   .   .   '\x92' {
+.   .   .   .   '\x93' {
+.   .   .   .   .   '\x94' {
+.   .   .   .   .   .   '\x95' {
+.   .   .   .   .   .   .   '\x96' {
+.   .   .   .   .   .   .   .   '\x97' {
+.   .   .   .   .   .   .   .   .   '\x98' {
+.   .   .   .   .   .   .   .   .   .   '\x99' {
+.   .   .   .   .   .   .   .   .   .   .   '\x9a' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\x9b' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\x9c' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x9d' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x9e' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\x9f': "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xa0' {
+.   .   '\xa1' {
+.   .   .   '\xa2' {
+.   .   .   .   '\xa3' {
+.   .   .   .   .   '\xa4' {
+.   .   .   .   .   .   '\xa5' {
+.   .   .   .   .   .   .   '\xa6' {
+.   .   .   .   .   .   .   .   '\xa7' {
+.   .   .   .   .   .   .   .   .   '\xa8' {
+.   .   .   .   .   .   .   .   .   .   '\xa9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xaa' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xab' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xac' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xad' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xae' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xaf': "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xb0' {
+.   .   '\xb1' {
+.   .   .   '\xb2' {
+.   .   .   .   '\xb3' {
+.   .   .   .   .   '\xb4' {
+.   .   .   .   .   .   '\xb5' {
+.   .   .   .   .   .   .   '\xb6' {
+.   .   .   .   .   .   .   .   '\xb7' {
+.   .   .   .   .   .   .   .   .   '\xb8' {
+.   .   .   .   .   .   .   .   .   .   '\xb9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xba' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xbb' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xbc' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xbd' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xbe' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xbf': "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xc0' {
+.   .   '\xc1' {
+.   .   .   '\xc2' {
+.   .   .   .   '\xc3' {
+.   .   .   .   .   '\xc4' {
+.   .   .   .   .   .   '\xc5' {
+.   .   .   .   .   .   .   '\xc6' {
+.   .   .   .   .   .   .   .   '\xc7' {
+.   .   .   .   .   .   .   .   .   '\xc8' {
+.   .   .   .   .   .   .   .   .   .   '\xc9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xca' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xcb' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xcc' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xcd' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xce' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xcf': "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xd0' {
+.   .   '\xd1' {
+.   .   .   '\xd2' {
+.   .   .   .   '\xd3' {
+.   .   .   .   .   '\xd4' {
+.   .   .   .   .   .   '\xd5' {
+.   .   .   .   .   .   .   '\xd6' {
+.   .   .   .   .   .   .   .   '\xd7' {
+.   .   .   .   .   .   .   .   .   '\xd8' {
+.   .   .   .   .   .   .   .   .   .   '\xd9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xda' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xdb' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xdc' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xdd' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xde' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xdf': "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xe0' {
+.   .   '\xe1' {
+.   .   .   '\xe2' {
+.   .   .   .   '\xe3' {
+.   .   .   .   .   '\xe4' {
+.   .   .   .   .   .   '\xe5' {
+.   .   .   .   .   .   .   '\xe6' {
+.   .   .   .   .   .   .   .   '\xe7' {
+.   .   .   .   .   .   .   .   .   '\xe8' {
+.   .   .   .   .   .   .   .   .   .   '\xe9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xea' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xeb' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xec' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xed' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xee' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xef': "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   '\xf0' {
+.   .   '\xf1' {
+.   .   .   '\xf2' {
+.   .   .   .   '\xf3' {
+.   .   .   .   .   '\xf4' {
+.   .   .   .   .   .   '\xf5' {
+.   .   .   .   .   .   .   '\xf6' {
+.   .   .   .   .   .   .   .   '\xf7' {
+.   .   .   .   .   .   .   .   .   '\xf8' {
+.   .   .   .   .   .   .   .   .   .   '\xf9' {
+.   .   .   .   .   .   .   .   .   .   .   '\xfa' {
+.   .   .   .   .   .   .   .   .   .   .   .   '\xfb' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   '\xfc' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xfd' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xfe' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   '\xff': "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$
+
+--[ letters ]-------------------------------------------------------------------
+
+$ letters() { python -c $'\nfrom sys import stdout\nfor i in range(ord("a"),ord("z")+1):\n\tfor j in range(ord("a"),i+1):\n\t\tstdout.write(chr(j))\n\tstdout.write("\\n")\n'; }
+$ letters|sort -c
+$ letters|./trie -u -w -D
+{
+.   'a': "a" {
+.   .   'b': "ab" {
+.   .   .   'c': "abc" {
+.   .   .   .   'd': "abcd" {
+.   .   .   .   .   'e': "abcde" {
+.   .   .   .   .   .   'f': "abcdef" {
+.   .   .   .   .   .   .   'g': "abcdefg" {
+.   .   .   .   .   .   .   .   'h': "abcdefgh" {
+.   .   .   .   .   .   .   .   .   'i': "abcdefghi" {
+.   .   .   .   .   .   .   .   .   .   'j': "abcdefghij" {
+.   .   .   .   .   .   .   .   .   .   .   'k': "abcdefghijk" {
+.   .   .   .   .   .   .   .   .   .   .   .   'l': "abcdefghijkl" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'm': "abcdefghijklm" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'n': "abcdefghijklmn" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'o': "abcdefghijklmno" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'p': "abcdefghijklmnop" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'q': "abcdefghijklmnopq" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'r': "abcdefghijklmnopqr" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's': "abcdefghijklmnopqrs" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't': "abcdefghijklmnopqrst" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u': "abcdefghijklmnopqrstu" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v': "abcdefghijklmnopqrstuv" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w': "abcdefghijklmnopqrstuvw" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x': "abcdefghijklmnopqrstuvwx" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y': "abcdefghijklmnopqrstuvwxy" {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "abcdefghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ diff -u -Lcompact <(letters|./trie -u -c) -Lwide <(letters|./trie -u -w|ssed -R 's/\x27/\x22/g') >/dev/null
+$
+
+--[ letters2 ]------------------------------------------------------------------
+
+$ letters2() { python -c $'\nfrom sys import stdout\nfor i in range(ord("a"),ord("z")+1):\n\tfor j in range(i,ord("z")+1):\n\t\tstdout.write(chr(j))\n\tstdout.write("\\n")\n'; }
+$ letters2|sort -c
+$ letters2|./trie -u -w -D
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd' {
+.   .   .   .   .   'e' {
+.   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   'g' {
+.   .   .   .   .   .   .   .   'h' {
+.   .   .   .   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "abcdefghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'b' {
+.   .   'c' {
+.   .   .   'd' {
+.   .   .   .   'e' {
+.   .   .   .   .   'f' {
+.   .   .   .   .   .   'g' {
+.   .   .   .   .   .   .   'h' {
+.   .   .   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "bcdefghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f' {
+.   .   .   .   .   'g' {
+.   .   .   .   .   .   'h' {
+.   .   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "cdefghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'd' {
+.   .   'e' {
+.   .   .   'f' {
+.   .   .   .   'g' {
+.   .   .   .   .   'h' {
+.   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "defghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'e' {
+.   .   'f' {
+.   .   .   'g' {
+.   .   .   .   'h' {
+.   .   .   .   .   'i' {
+.   .   .   .   .   .   'j' {
+.   .   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "efghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'f' {
+.   .   'g' {
+.   .   .   'h' {
+.   .   .   .   'i' {
+.   .   .   .   .   'j' {
+.   .   .   .   .   .   'k' {
+.   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "fghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'g' {
+.   .   'h' {
+.   .   .   'i' {
+.   .   .   .   'j' {
+.   .   .   .   .   'k' {
+.   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "ghijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'h' {
+.   .   'i' {
+.   .   .   'j' {
+.   .   .   .   'k' {
+.   .   .   .   .   'l' {
+.   .   .   .   .   .   'm' {
+.   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "hijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'i' {
+.   .   'j' {
+.   .   .   'k' {
+.   .   .   .   'l' {
+.   .   .   .   .   'm' {
+.   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "ijklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'j' {
+.   .   'k' {
+.   .   .   'l' {
+.   .   .   .   'm' {
+.   .   .   .   .   'n' {
+.   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "jklmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'k' {
+.   .   'l' {
+.   .   .   'm' {
+.   .   .   .   'n' {
+.   .   .   .   .   'o' {
+.   .   .   .   .   .   'p' {
+.   .   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "klmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'l' {
+.   .   'm' {
+.   .   .   'n' {
+.   .   .   .   'o' {
+.   .   .   .   .   'p' {
+.   .   .   .   .   .   'q' {
+.   .   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "lmnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'm' {
+.   .   'n' {
+.   .   .   'o' {
+.   .   .   .   'p' {
+.   .   .   .   .   'q' {
+.   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   .   'z': "mnopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'n' {
+.   .   'o' {
+.   .   .   'p' {
+.   .   .   .   'q' {
+.   .   .   .   .   'r' {
+.   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   .   'z': "nopqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'o' {
+.   .   'p' {
+.   .   .   'q' {
+.   .   .   .   'r' {
+.   .   .   .   .   's' {
+.   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   .   'z': "opqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'p' {
+.   .   'q' {
+.   .   .   'r' {
+.   .   .   .   's' {
+.   .   .   .   .   't' {
+.   .   .   .   .   .   'u' {
+.   .   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   .   'z': "pqrstuvwxyz"
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'q' {
+.   .   'r' {
+.   .   .   's' {
+.   .   .   .   't' {
+.   .   .   .   .   'u' {
+.   .   .   .   .   .   'v' {
+.   .   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   .   'z': "qrstuvwxyz"
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'r' {
+.   .   's' {
+.   .   .   't' {
+.   .   .   .   'u' {
+.   .   .   .   .   'v' {
+.   .   .   .   .   .   'w' {
+.   .   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   .   'z': "rstuvwxyz"
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   's' {
+.   .   't' {
+.   .   .   'u' {
+.   .   .   .   'v' {
+.   .   .   .   .   'w' {
+.   .   .   .   .   .   'x' {
+.   .   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   .   'z': "stuvwxyz"
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   't' {
+.   .   'u' {
+.   .   .   'v' {
+.   .   .   .   'w' {
+.   .   .   .   .   'x' {
+.   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   'z': "tuvwxyz"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'u' {
+.   .   'v' {
+.   .   .   'w' {
+.   .   .   .   'x' {
+.   .   .   .   .   'y' {
+.   .   .   .   .   .   'z': "uvwxyz"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'v' {
+.   .   'w' {
+.   .   .   'x' {
+.   .   .   .   'y' {
+.   .   .   .   .   'z': "vwxyz"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'w' {
+.   .   'x' {
+.   .   .   'y' {
+.   .   .   .   'z': "wxyz"
+.   .   .   }
+.   .   }
+.   }
+.   'x' {
+.   .   'y' {
+.   .   .   'z': "xyz"
+.   .   }
+.   }
+.   'y' {
+.   .   'z': "yz"
+.   }
+.   'z': "z"
+}
+$ letters2|./trie -u -c -D
+{
+.   "abcdefghijklmnopqrstuvwxyz": "abcdefghijklmnopqrstuvwxyz"
+.   "bcdefghijklmnopqrstuvwxyz": "bcdefghijklmnopqrstuvwxyz"
+.   "cdefghijklmnopqrstuvwxyz": "cdefghijklmnopqrstuvwxyz"
+.   "defghijklmnopqrstuvwxyz": "defghijklmnopqrstuvwxyz"
+.   "efghijklmnopqrstuvwxyz": "efghijklmnopqrstuvwxyz"
+.   "fghijklmnopqrstuvwxyz": "fghijklmnopqrstuvwxyz"
+.   "ghijklmnopqrstuvwxyz": "ghijklmnopqrstuvwxyz"
+.   "hijklmnopqrstuvwxyz": "hijklmnopqrstuvwxyz"
+.   "ijklmnopqrstuvwxyz": "ijklmnopqrstuvwxyz"
+.   "jklmnopqrstuvwxyz": "jklmnopqrstuvwxyz"
+.   "klmnopqrstuvwxyz": "klmnopqrstuvwxyz"
+.   "lmnopqrstuvwxyz": "lmnopqrstuvwxyz"
+.   "mnopqrstuvwxyz": "mnopqrstuvwxyz"
+.   "nopqrstuvwxyz": "nopqrstuvwxyz"
+.   "opqrstuvwxyz": "opqrstuvwxyz"
+.   "pqrstuvwxyz": "pqrstuvwxyz"
+.   "qrstuvwxyz": "qrstuvwxyz"
+.   "rstuvwxyz": "rstuvwxyz"
+.   "stuvwxyz": "stuvwxyz"
+.   "tuvwxyz": "tuvwxyz"
+.   "uvwxyz": "uvwxyz"
+.   "vwxyz": "vwxyz"
+.   "wxyz": "wxyz"
+.   "xyz": "xyz"
+.   "yz": "yz"
+.   "z": "z"
+}
+$
+
+--[ compact ]-------------------------------------------------------------------
+
+$ trie() { ./trie -U -c -D; }
+# $ test-cases() { (. ~/regtest2.sh && alias regtest='regtest2-selftest -f test.txt -B' && cd ~/gateprotect-task && regtest -C gen-func && regtest -C gen-func-ex)|ssed -nR 's/^gen-func\s+(.*?)\s*$/\1/p'|sort -u; }
+# $ test-cases|ssed -R 's/^.*$/$ print \0|trie/'
+$ print a|trie
+{
+.   "a": "a"
+}
+$ print a a|trie
+{
+.   "a": "a"
+}
+$ print a aa b|trie
+{
+.   "a": "a" {
+.   .   "a": "aa"
+.   }
+.   "b": "b"
+}
+$ print a ab|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   }
+}
+$ print a ab abc|trie
+{
+.   "a": "a" {
+.   .   "b": "ab" {
+.   .   .   "c": "abc"
+.   .   }
+.   }
+}
+$ print a ab abc abcd|trie
+{
+.   "a": "a" {
+.   .   "b": "ab" {
+.   .   .   "c": "abc" {
+.   .   .   .   "d": "abcd"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a ab abc abcd abc$'\xfa'|trie
+{
+.   "a": "a" {
+.   .   "b": "ab" {
+.   .   .   "c": "abc" {
+.   .   .   .   "d": "abcd"
+.   .   .   .   "\xfa": "abc\xfa"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a ab abc abd ac|trie
+{
+.   "a": "a" {
+.   .   "b": "ab" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "c": "ac"
+.   }
+}
+$ print a ab ac|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   .   "c": "ac"
+.   }
+}
+$ print a ab ac acd|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   .   "c": "ac" {
+.   .   .   "d": "acd"
+.   .   }
+.   }
+}
+$ print a ab ac ad|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   .   "c": "ac"
+.   .   "d": "ad"
+.   }
+}
+$ print a ab acd ace|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   .   "c" {
+.   .   .   "d": "acd"
+.   .   .   "e": "ace"
+.   .   }
+.   }
+}
+$ print a ab b|trie
+{
+.   "a": "a" {
+.   .   "b": "ab"
+.   }
+.   "b": "b"
+}
+$ print a abc abd ac|trie
+{
+.   "a": "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "c": "ac"
+.   }
+}
+$ print a abcd abcdefg abcdxyz h hijk|trie
+{
+.   "a": "a" {
+.   .   "bcd": "abcd" {
+.   .   .   "efg": "abcdefg"
+.   .   .   "xyz": "abcdxyz"
+.   .   }
+.   }
+.   "h": "h" {
+.   .   "ijk": "hijk"
+.   }
+}
+$ print a abcd abcdefg abcdxyz h hijk hlm|trie
+{
+.   "a": "a" {
+.   .   "bcd": "abcd" {
+.   .   .   "efg": "abcdefg"
+.   .   .   "xyz": "abcdxyz"
+.   .   }
+.   }
+.   "h": "h" {
+.   .   "ijk": "hijk"
+.   .   "lm": "hlm"
+.   }
+}
+$ print a abcd abcdefg h hijk|trie
+{
+.   "a": "a" {
+.   .   "bcd": "abcd" {
+.   .   .   "efg": "abcdefg"
+.   .   }
+.   }
+.   "h": "h" {
+.   .   "ijk": "hijk"
+.   }
+}
+$ print a abd ac|trie
+{
+.   "a": "a" {
+.   .   "bd": "abd"
+.   .   "c": "ac"
+.   }
+}
+$ print a b|trie
+{
+.   "a": "a"
+.   "b": "b"
+}
+$ print a b abc bac abd|trie
+{
+.   "a": "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   }
+.   "b": "b" {
+.   .   "ac": "bac"
+.   }
+}
+$ print a b bb|trie
+{
+.   "a": "a"
+.   "b": "b" {
+.   .   "b": "bb"
+.   }
+}
+$ print a b bb cc ccc ddd dddd|trie
+{
+.   "a": "a"
+.   "b": "b" {
+.   .   "b": "bb"
+.   }
+.   "cc": "cc" {
+.   .   "c": "ccc"
+.   }
+.   "ddd": "ddd" {
+.   .   "d": "dddd"
+.   }
+}
+$ print a b c|trie
+{
+.   "a": "a"
+.   "b": "b"
+.   "c": "c"
+}
+$ print a bb ba c|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "c": "c"
+}
+$ print a bb ba cc|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "cc": "cc"
+}
+$ print a bb ba ccc|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "ccc": "ccc"
+}
+$ print a bb ba cde|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "cde": "cde"
+}
+$ print a bb ba cdef|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "cdef": "cdef"
+}
+$ print a bb ba cdef cdefg|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "cdef": "cdef" {
+.   .   "g": "cdefg"
+.   }
+}
+$ print a bb bac cdef|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "ac": "bac"
+.   .   "b": "bb"
+.   }
+.   "cdef": "cdef"
+}
+$ print a bb ccc|trie
+{
+.   "a": "a"
+.   "bb": "bb"
+.   "ccc": "ccc"
+}
+$ print a bbx ba ccc|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "a": "ba"
+.   .   "bx": "bbx"
+.   }
+.   "ccc": "ccc"
+}
+$ print a bbx bay ccc|trie
+{
+.   "a": "a"
+.   "b" {
+.   .   "ay": "bay"
+.   .   "bx": "bbx"
+.   }
+.   "ccc": "ccc"
+}
+$ print a cde cdef|trie
+{
+.   "a": "a"
+.   "cde": "cde" {
+.   .   "f": "cdef"
+.   }
+}
+$ print a cde cdef cdefg|trie
+{
+.   "a": "a"
+.   "cde": "cde" {
+.   .   "f": "cdef" {
+.   .   .   "g": "cdefg"
+.   .   }
+.   }
+}
+$ print a cde cdef cdefgh|trie
+{
+.   "a": "a"
+.   "cde": "cde" {
+.   .   "f": "cdef" {
+.   .   .   "gh": "cdefgh"
+.   .   }
+.   }
+}
+$ print a cdef cdefg|trie
+{
+.   "a": "a"
+.   "cdef": "cdef" {
+.   .   "g": "cdefg"
+.   }
+}
+$ print aa bb|trie
+{
+.   "aa": "aa"
+.   "bb": "bb"
+}
+$ print ab|trie
+{
+.   "ab": "ab"
+}
+$ print ab abc abce abd abdz abe abez|trie
+{
+.   "ab": "ab" {
+.   .   "c": "abc" {
+.   .   .   "e": "abce"
+.   .   }
+.   .   "d": "abd" {
+.   .   .   "z": "abdz"
+.   .   }
+.   .   "e": "abe" {
+.   .   .   "z": "abez"
+.   .   }
+.   }
+}
+$ print ab ac|trie
+{
+.   "a" {
+.   .   "b": "ab"
+.   .   "c": "ac"
+.   }
+}
+$ print ab bb ba ccc|trie
+{
+.   "ab": "ab"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "ccc": "ccc"
+}
+$ print ab bb ba cde|trie
+{
+.   "ab": "ab"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "cde": "cde"
+}
+$ print ab bbx ba ccc|trie
+{
+.   "ab": "ab"
+.   "b" {
+.   .   "a": "ba"
+.   .   "bx": "bbx"
+.   }
+.   "ccc": "ccc"
+}
+$ print ab c|trie
+{
+.   "ab": "ab"
+.   "c": "c"
+}
+$ print abc abce abcef abcf abcfg abcfgh abcfgi abd|trie
+{
+.   "ab" {
+.   .   "c": "abc" {
+.   .   .   "e": "abce" {
+.   .   .   .   "f": "abcef"
+.   .   .   }
+.   .   .   "f": "abcf" {
+.   .   .   .   "g": "abcfg" {
+.   .   .   .   .   "h": "abcfgh"
+.   .   .   .   .   "i": "abcfgi"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   .   "d": "abd"
+.   }
+}
+$ print abc abce abcef abcf abcfg abd|trie
+{
+.   "ab" {
+.   .   "c": "abc" {
+.   .   .   "e": "abce" {
+.   .   .   .   "f": "abcef"
+.   .   .   }
+.   .   .   "f": "abcf" {
+.   .   .   .   "g": "abcfg"
+.   .   .   }
+.   .   }
+.   .   "d": "abd"
+.   }
+}
+$ print abc abce abcef abcf abcfgh abcfgi abd|trie
+{
+.   "ab" {
+.   .   "c": "abc" {
+.   .   .   "e": "abce" {
+.   .   .   .   "f": "abcef"
+.   .   .   }
+.   .   .   "f": "abcf" {
+.   .   .   .   "g" {
+.   .   .   .   .   "h": "abcfgh"
+.   .   .   .   .   "i": "abcfgi"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   .   "d": "abd"
+.   }
+}
+$ print abc abce abcef abcf abd|trie
+{
+.   "ab" {
+.   .   "c": "abc" {
+.   .   .   "e": "abce" {
+.   .   .   .   "f": "abcef"
+.   .   .   }
+.   .   .   "f": "abcf"
+.   .   }
+.   .   "d": "abd"
+.   }
+}
+$ print abc abcz abd abdz abe abez|trie
+{
+.   "ab" {
+.   .   "c": "abc" {
+.   .   .   "z": "abcz"
+.   .   }
+.   .   "d": "abd" {
+.   .   .   "z": "abdz"
+.   .   }
+.   .   "e": "abe" {
+.   .   .   "z": "abez"
+.   .   }
+.   }
+}
+$ print abc abd ac|trie
+{
+.   "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "c": "ac"
+.   }
+}
+$ print abc abd acde|trie
+{
+.   "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "cde": "acde"
+.   }
+}
+$ print abc abd acde ac|trie
+{
+.   "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "c": "ac" {
+.   .   .   "de": "acde"
+.   .   }
+.   }
+}
+$ print abc abd acde acfg|trie
+{
+.   "a" {
+.   .   "b" {
+.   .   .   "c": "abc"
+.   .   .   "d": "abd"
+.   .   }
+.   .   "c" {
+.   .   .   "de": "acde"
+.   .   .   "fg": "acfg"
+.   .   }
+.   }
+}
+$ print abc bb ba ccc|trie
+{
+.   "abc": "abc"
+.   "b" {
+.   .   "a": "ba"
+.   .   "b": "bb"
+.   }
+.   "ccc": "ccc"
+}
+$ print abcd abce ac|trie
+{
+.   "a" {
+.   .   "bc" {
+.   .   .   "d": "abcd"
+.   .   .   "e": "abce"
+.   .   }
+.   .   "c": "ac"
+.   }
+}
+$ print abcd abde abef|trie
+{
+.   "ab" {
+.   .   "cd": "abcd"
+.   .   "de": "abde"
+.   .   "ef": "abef"
+.   }
+}
+$ print ac ab|trie
+{
+.   "a" {
+.   .   "b": "ab"
+.   .   "c": "ac"
+.   }
+}
+$ print cde cdef cdefgh|trie
+{
+.   "cde": "cde" {
+.   .   "f": "cdef" {
+.   .   .   "gh": "cdefgh"
+.   .   }
+.   }
+}
+$ print cde cfg cfgx cfgxy cfgxyz cfgxzzz|trie
+{
+.   "c" {
+.   .   "de": "cde"
+.   .   "fg": "cfg" {
+.   .   .   "x": "cfgx" {
+.   .   .   .   "y": "cfgxy" {
+.   .   .   .   .   "z": "cfgxyz"
+.   .   .   .   }
+.   .   .   .   "zzz": "cfgxzzz"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print cdef cdefg|trie
+{
+.   "cdef": "cdef" {
+.   .   "g": "cdefg"
+.   }
+}
+$ print cdex cdfy cdgz cdhw|trie
+{
+.   "cd" {
+.   .   "ex": "cdex"
+.   .   "fy": "cdfy"
+.   .   "gz": "cdgz"
+.   .   "hw": "cdhw"
+.   }
+}
+$ print ce cdex cdfy cdgz cdhw|trie
+{
+.   "c" {
+.   .   "d" {
+.   .   .   "ex": "cdex"
+.   .   .   "fy": "cdfy"
+.   .   .   "gz": "cdgz"
+.   .   .   "hw": "cdhw"
+.   .   }
+.   .   "e": "ce"
+.   }
+}
+$ print cge cfg cfgx cfgxy cfgxyz cfgxzzz|trie
+{
+.   "c" {
+.   .   "fg": "cfg" {
+.   .   .   "x": "cfgx" {
+.   .   .   .   "y": "cfgxy" {
+.   .   .   .   .   "z": "cfgxyz"
+.   .   .   .   }
+.   .   .   .   "zzz": "cfgxzzz"
+.   .   .   }
+.   .   }
+.   .   "ge": "cge"
+.   }
+}
+$ print pot potato pottery tattoo tempo|trie
+{
+.   "pot": "pot" {
+.   .   "ato": "potato"
+.   .   "tery": "pottery"
+.   }
+.   "t" {
+.   .   "attoo": "tattoo"
+.   .   "empo": "tempo"
+.   }
+}
+$ print test|trie
+{
+.   "test": "test"
+}
+$ print test tests|trie
+{
+.   "test": "test" {
+.   .   "s": "tests"
+.   }
+}
+$ print test-str test-string test-int test-float|trie
+{
+.   "test-" {
+.   .   "float": "test-float"
+.   .   "int": "test-int"
+.   .   "str": "test-str" {
+.   .   .   "ing": "test-string"
+.   .   }
+.   }
+}
+$
+
+--[ wide ]----------------------------------------------------------------------
+
+$ trie() { ./trie -U -w -D; }
+# $ test-cases() { (. ~/regtest2.sh && alias regtest='regtest2-selftest -f test.txt -B' && cd ~/gateprotect-task && regtest -C gen-func && regtest -C gen-func-ex)|ssed -nR 's/^gen-func\s+(.*?)\s*$/\1/p'|sort -u; }
+# $ test-cases|ssed -R 's/^.*$/$ print \0|trie/'
+$ print a|trie
+{
+.   'a': "a"
+}
+$ print a a|trie
+{
+.   'a': "a"
+}
+$ print a aa b|trie
+{
+.   'a': "a" {
+.   .   'a': "aa"
+.   }
+.   'b': "b"
+}
+$ print a ab|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   }
+}
+$ print a ab abc|trie
+{
+.   'a': "a" {
+.   .   'b': "ab" {
+.   .   .   'c': "abc"
+.   .   }
+.   }
+}
+$ print a ab abc abcd|trie
+{
+.   'a': "a" {
+.   .   'b': "ab" {
+.   .   .   'c': "abc" {
+.   .   .   .   'd': "abcd"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a ab abc abcd abc$'\xfa'|trie
+{
+.   'a': "a" {
+.   .   'b': "ab" {
+.   .   .   'c': "abc" {
+.   .   .   .   'd': "abcd"
+.   .   .   .   '\xfa': "abc\xfa"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a ab abc abd ac|trie
+{
+.   'a': "a" {
+.   .   'b': "ab" {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c': "ac"
+.   }
+}
+$ print a ab ac|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   .   'c': "ac"
+.   }
+}
+$ print a ab ac acd|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   .   'c': "ac" {
+.   .   .   'd': "acd"
+.   .   }
+.   }
+}
+$ print a ab ac ad|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   .   'c': "ac"
+.   .   'd': "ad"
+.   }
+}
+$ print a ab acd ace|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   .   'c' {
+.   .   .   'd': "acd"
+.   .   .   'e': "ace"
+.   .   }
+.   }
+}
+$ print a ab b|trie
+{
+.   'a': "a" {
+.   .   'b': "ab"
+.   }
+.   'b': "b"
+}
+$ print a abc abd ac|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c': "ac"
+.   }
+}
+$ print a abcd abcdefg abcdxyz h hijk|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd': "abcd" {
+.   .   .   .   .   'e' {
+.   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   'g': "abcdefg"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   .   'x' {
+.   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   'z': "abcdxyz"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'h': "h" {
+.   .   'i' {
+.   .   .   'j' {
+.   .   .   .   'k': "hijk"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a abcd abcdefg abcdxyz h hijk hlm|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd': "abcd" {
+.   .   .   .   .   'e' {
+.   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   'g': "abcdefg"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   .   'x' {
+.   .   .   .   .   .   'y' {
+.   .   .   .   .   .   .   'z': "abcdxyz"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'h': "h" {
+.   .   'i' {
+.   .   .   'j' {
+.   .   .   .   'k': "hijk"
+.   .   .   }
+.   .   }
+.   .   'l' {
+.   .   .   'm': "hlm"
+.   .   }
+.   }
+}
+$ print a abcd abcdefg h hijk|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd': "abcd" {
+.   .   .   .   .   'e' {
+.   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   'g': "abcdefg"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   'h': "h" {
+.   .   'i' {
+.   .   .   'j' {
+.   .   .   .   'k': "hijk"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a abd ac|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c': "ac"
+.   }
+}
+$ print a b|trie
+{
+.   'a': "a"
+.   'b': "b"
+}
+$ print a b abc bac abd|trie
+{
+.   'a': "a" {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   }
+.   'b': "b" {
+.   .   'a' {
+.   .   .   'c': "bac"
+.   .   }
+.   }
+}
+$ print a b bb|trie
+{
+.   'a': "a"
+.   'b': "b" {
+.   .   'b': "bb"
+.   }
+}
+$ print a b bb cc ccc ddd dddd|trie
+{
+.   'a': "a"
+.   'b': "b" {
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c': "cc" {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+.   'd' {
+.   .   'd' {
+.   .   .   'd': "ddd" {
+.   .   .   .   'd': "dddd"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a b c|trie
+{
+.   'a': "a"
+.   'b': "b"
+.   'c': "c"
+}
+$ print a bb ba c|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c': "c"
+}
+$ print a bb ba cc|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c': "cc"
+.   }
+}
+$ print a bb ba ccc|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print a bb ba cde|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde"
+.   .   }
+.   }
+}
+$ print a bb ba cdef|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f': "cdef"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a bb ba cdef cdefg|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g': "cdefg"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a bb bac cdef|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a' {
+.   .   .   'c': "bac"
+.   .   }
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f': "cdef"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a bb ccc|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print a bbx ba ccc|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a': "ba"
+.   .   'b' {
+.   .   .   'x': "bbx"
+.   .   }
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print a bbx bay ccc|trie
+{
+.   'a': "a"
+.   'b' {
+.   .   'a' {
+.   .   .   'y': "bay"
+.   .   }
+.   .   'b' {
+.   .   .   'x': "bbx"
+.   .   }
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print a cde cdef|trie
+{
+.   'a': "a"
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde" {
+.   .   .   .   'f': "cdef"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a cde cdef cdefg|trie
+{
+.   'a': "a"
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde" {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g': "cdefg"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a cde cdef cdefgh|trie
+{
+.   'a': "a"
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde" {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g' {
+.   .   .   .   .   .   'h': "cdefgh"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print a cdef cdefg|trie
+{
+.   'a': "a"
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g': "cdefg"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print aa bb|trie
+{
+.   'a' {
+.   .   'a': "aa"
+.   }
+.   'b' {
+.   .   'b': "bb"
+.   }
+}
+$ print ab|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   }
+}
+$ print ab abc abce abd abdz abe abez|trie
+{
+.   'a' {
+.   .   'b': "ab" {
+.   .   .   'c': "abc" {
+.   .   .   .   'e': "abce"
+.   .   .   }
+.   .   .   'd': "abd" {
+.   .   .   .   'z': "abdz"
+.   .   .   }
+.   .   .   'e': "abe" {
+.   .   .   .   'z': "abez"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print ab ac|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   .   'c': "ac"
+.   }
+}
+$ print ab bb ba ccc|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   }
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print ab bb ba cde|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   }
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde"
+.   .   }
+.   }
+}
+$ print ab bbx ba ccc|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   }
+.   'b' {
+.   .   'a': "ba"
+.   .   'b' {
+.   .   .   'x': "bbx"
+.   .   }
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print ab c|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   }
+.   'c': "c"
+}
+$ print abc abce abcef abcf abcfg abcfgh abcfgi abd|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc" {
+.   .   .   .   'e': "abce" {
+.   .   .   .   .   'f': "abcef"
+.   .   .   .   }
+.   .   .   .   'f': "abcf" {
+.   .   .   .   .   'g': "abcfg" {
+.   .   .   .   .   .   'h': "abcfgh"
+.   .   .   .   .   .   'i': "abcfgi"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   .   'd': "abd"
+.   .   }
+.   }
+}
+$ print abc abce abcef abcf abcfg abd|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc" {
+.   .   .   .   'e': "abce" {
+.   .   .   .   .   'f': "abcef"
+.   .   .   .   }
+.   .   .   .   'f': "abcf" {
+.   .   .   .   .   'g': "abcfg"
+.   .   .   .   }
+.   .   .   }
+.   .   .   'd': "abd"
+.   .   }
+.   }
+}
+$ print abc abce abcef abcf abcfgh abcfgi abd|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc" {
+.   .   .   .   'e': "abce" {
+.   .   .   .   .   'f': "abcef"
+.   .   .   .   }
+.   .   .   .   'f': "abcf" {
+.   .   .   .   .   'g' {
+.   .   .   .   .   .   'h': "abcfgh"
+.   .   .   .   .   .   'i': "abcfgi"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   .   'd': "abd"
+.   .   }
+.   }
+}
+$ print abc abce abcef abcf abd|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc" {
+.   .   .   .   'e': "abce" {
+.   .   .   .   .   'f': "abcef"
+.   .   .   .   }
+.   .   .   .   'f': "abcf"
+.   .   .   }
+.   .   .   'd': "abd"
+.   .   }
+.   }
+}
+$ print abc abcz abd abdz abe abez|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc" {
+.   .   .   .   'z': "abcz"
+.   .   .   }
+.   .   .   'd': "abd" {
+.   .   .   .   'z': "abdz"
+.   .   .   }
+.   .   .   'e': "abe" {
+.   .   .   .   'z': "abez"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print abc abd ac|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c': "ac"
+.   }
+}
+$ print abc abd acde|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c' {
+.   .   .   'd' {
+.   .   .   .   'e': "acde"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print abc abd acde ac|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c': "ac" {
+.   .   .   'd' {
+.   .   .   .   'e': "acde"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print abc abd acde acfg|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   .   'd': "abd"
+.   .   }
+.   .   'c' {
+.   .   .   'd' {
+.   .   .   .   'e': "acde"
+.   .   .   }
+.   .   .   'f' {
+.   .   .   .   'g': "acfg"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print abc bb ba ccc|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c': "abc"
+.   .   }
+.   }
+.   'b' {
+.   .   'a': "ba"
+.   .   'b': "bb"
+.   }
+.   'c' {
+.   .   'c' {
+.   .   .   'c': "ccc"
+.   .   }
+.   }
+}
+$ print abcd abce ac|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd': "abcd"
+.   .   .   .   'e': "abce"
+.   .   .   }
+.   .   }
+.   .   'c': "ac"
+.   }
+}
+$ print abcd abde abef|trie
+{
+.   'a' {
+.   .   'b' {
+.   .   .   'c' {
+.   .   .   .   'd': "abcd"
+.   .   .   }
+.   .   .   'd' {
+.   .   .   .   'e': "abde"
+.   .   .   }
+.   .   .   'e' {
+.   .   .   .   'f': "abef"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print ac ab|trie
+{
+.   'a' {
+.   .   'b': "ab"
+.   .   'c': "ac"
+.   }
+}
+$ print cde cdef cdefgh|trie
+{
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde" {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g' {
+.   .   .   .   .   .   'h': "cdefgh"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print cde cfg cfgx cfgxy cfgxyz cfgxzzz|trie
+{
+.   'c' {
+.   .   'd' {
+.   .   .   'e': "cde"
+.   .   }
+.   .   'f' {
+.   .   .   'g': "cfg" {
+.   .   .   .   'x': "cfgx" {
+.   .   .   .   .   'y': "cfgxy" {
+.   .   .   .   .   .   'z': "cfgxyz"
+.   .   .   .   .   }
+.   .   .   .   .   'z' {
+.   .   .   .   .   .   'z' {
+.   .   .   .   .   .   .   'z': "cfgxzzz"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print cdef cdefg|trie
+{
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'f': "cdef" {
+.   .   .   .   .   'g': "cdefg"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print cdex cdfy cdgz cdhw|trie
+{
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'x': "cdex"
+.   .   .   }
+.   .   .   'f' {
+.   .   .   .   'y': "cdfy"
+.   .   .   }
+.   .   .   'g' {
+.   .   .   .   'z': "cdgz"
+.   .   .   }
+.   .   .   'h' {
+.   .   .   .   'w': "cdhw"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print ce cdex cdfy cdgz cdhw|trie
+{
+.   'c' {
+.   .   'd' {
+.   .   .   'e' {
+.   .   .   .   'x': "cdex"
+.   .   .   }
+.   .   .   'f' {
+.   .   .   .   'y': "cdfy"
+.   .   .   }
+.   .   .   'g' {
+.   .   .   .   'z': "cdgz"
+.   .   .   }
+.   .   .   'h' {
+.   .   .   .   'w': "cdhw"
+.   .   .   }
+.   .   }
+.   .   'e': "ce"
+.   }
+}
+$ print cge cfg cfgx cfgxy cfgxyz cfgxzzz|trie
+{
+.   'c' {
+.   .   'f' {
+.   .   .   'g': "cfg" {
+.   .   .   .   'x': "cfgx" {
+.   .   .   .   .   'y': "cfgxy" {
+.   .   .   .   .   .   'z': "cfgxyz"
+.   .   .   .   .   }
+.   .   .   .   .   'z' {
+.   .   .   .   .   .   'z' {
+.   .   .   .   .   .   .   'z': "cfgxzzz"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   .   'g' {
+.   .   .   'e': "cge"
+.   .   }
+.   }
+}
+$ print pot potato pottery tattoo tempo|trie
+{
+.   'p' {
+.   .   'o' {
+.   .   .   't': "pot" {
+.   .   .   .   'a' {
+.   .   .   .   .   't' {
+.   .   .   .   .   .   'o': "potato"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   .   't' {
+.   .   .   .   .   'e' {
+.   .   .   .   .   .   'r' {
+.   .   .   .   .   .   .   'y': "pottery"
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+.   't' {
+.   .   'a' {
+.   .   .   't' {
+.   .   .   .   't' {
+.   .   .   .   .   'o' {
+.   .   .   .   .   .   'o': "tattoo"
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   .   'e' {
+.   .   .   'm' {
+.   .   .   .   'p' {
+.   .   .   .   .   'o': "tempo"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print test|trie
+{
+.   't' {
+.   .   'e' {
+.   .   .   's' {
+.   .   .   .   't': "test"
+.   .   .   }
+.   .   }
+.   }
+}
+$ print test tests|trie
+{
+.   't' {
+.   .   'e' {
+.   .   .   's' {
+.   .   .   .   't': "test" {
+.   .   .   .   .   's': "tests"
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$ print test-str test-string test-int test-float|trie
+{
+.   't' {
+.   .   'e' {
+.   .   .   's' {
+.   .   .   .   't' {
+.   .   .   .   .   '-' {
+.   .   .   .   .   .   'f' {
+.   .   .   .   .   .   .   'l' {
+.   .   .   .   .   .   .   .   'o' {
+.   .   .   .   .   .   .   .   .   'a' {
+.   .   .   .   .   .   .   .   .   .   't': "test-float"
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   't': "test-int"
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   .   's' {
+.   .   .   .   .   .   .   't' {
+.   .   .   .   .   .   .   .   'r': "test-str" {
+.   .   .   .   .   .   .   .   .   'i' {
+.   .   .   .   .   .   .   .   .   .   'n' {
+.   .   .   .   .   .   .   .   .   .   .   'g': "test-string"
+.   .   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   .   }
+.   .   .   .   .   .   .   }
+.   .   .   .   .   .   }
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   }
+.   .   }
+.   }
+}
+$
+
+
