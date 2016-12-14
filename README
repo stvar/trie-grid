@@ -9,6 +9,10 @@ Table of Contents
 -----------------
 
 0. Copyright
+1. The Trie-Grid Program
+2. Building Trie-Grid
+3. Testing Trie-Grid
+4. References
 
 
 0. Copyright
@@ -22,5 +26,198 @@ License, or (at your option) any later version.
 You should have received a copy of the GNU General Public License along with
 this program (look up for the file COPYING in the top directory of the source
 tree). If not, see http://gnu.org/licenses/gpl.html.
+
+
+1. The Trie-Grid Program
+========================
+
+The Trie-Grid's program main vocation is that of a trie generator in the style
+of Trie-Gen [1], but without using explicit trie data structures as Trie-Gen
+does. This is to say that the program is able to generate 'wide' and 'compact'
+trie structures based on the input strings provided:
+
+  $ print() { printf '%s\n' "$@"; }
+
+  $ trie() { src/trie --gen-trie --dots "$@"; }
+
+  $ print pot potato pottery|trie --wide
+  {
+  .   'p' {
+  .   .   'o' {
+  .   .   .   't': "pot" {
+  .   .   .   .   'a' {
+  .   .   .   .   .   't' {
+  .   .   .   .   .   .   'o': "potato"
+  .   .   .   .   .   }
+  .   .   .   .   }
+  .   .   .   .   't' {
+  .   .   .   .   .   'e' {
+  .   .   .   .   .   .   'r' {
+  .   .   .   .   .   .   .   'y': "pottery"
+  .   .   .   .   .   .   }
+  .   .   .   .   .   }
+  .   .   .   .   }
+  .   .   .   }
+  .   .   }
+  .   }
+  }
+
+  $ print pot potato pottery|trie --compact
+  {
+  .   "pot": "pot" {
+  .   .   "ato": "potato"
+  .   .   "tery": "pottery"
+  .   }
+  }
+
+This program was written back in September 2015 and evolved only a bit since its
+initial inception. Trie-Grid's implementation code is aware of C++11, but I had
+chosen to write it such that to be able to compile it with older GCC compilers
+belonging to C++98 era. (For example, wasn't using 'static_assert', but a struct
+template 'cxx_assert_t<bool>' instead.)
+
+
+2. Building Trie-Grid
+=====================
+
+The Trie-Grid program is written in modern C++ and was developed under GNU/Linux
+using the GCC C++ compiler 4.3.4 and an experimental 4.8.0 (built from sources)
+and also a few fairly common GNU/Linux power-tools.
+
+Note that Trie-Grid is actually needing a GCC compiler (or a compatible one for
+that matter: e.g. clang).
+
+For building the program simply issue 'make' in the 'src' directory:
+
+  $ cd src
+
+  $ make
+
+Expect to get neither warnings not errors out of 'make'. If everything went OK,
+'make' is supposed to have produced the binary 'trie'. The 'Makefile' in 'src'
+directory is simple enough to not cause big trouble if not using GNU 'make'.
+
+The build of a 'trie' binary is governed by the following 'CONFIG_*' parameters:
+
+  $ grep -E -how 'CONFIG_[A-Z0-9_]+' src/trie.cpp|sort -u
+  CONFIG_GRID_APPEND_EMPLACE_BACK
+  CONFIG_GRID_APPEND_PUSH_BACK
+  CONFIG_GRID_GROW_RESERVE
+  CONFIG_GRID_SORT_QUICK3WAY2
+
+These parameters are supposed to be passed in to 'make' as a series of command
+line arguments of form:
+
+  $ make CONFIG+=$NAME...
+
+where '$NAME' is any name in the list below with the prefix 'CONFIG_' removed:
+
+  CONFIG_GRID_APPEND_PUSH_BACK, CONFIG_GRID_APPEND_EMPLACE_BACK
+  -------------------------------------------------------------
+  This two configuration parameters are exclusive to each other. Defining
+  one of the two determines which of the two 'std::vector' member functions
+  to be used -- either 'push_back' or 'emplace_back' -- for appending into
+  the grid -- a 'std::vector<std::string>' -- containing strings given on
+  input. Not defining any of the two implies using of 'push_back' function.
+
+  CONFIG_GRID_GROW_RESERVE
+  ------------------------
+  Trie-Grid is using two algorithms for loading in the strings received as
+  input: these two are 'append_grid' and 'grow_grid' (see the corresponding
+  two functions 'input_append<>' and 'input_grow<>' in 'src/trie.cpp').
+
+  The grid (as noted above) is a vector of strings which is filled in with
+  input strings by:
+
+    * in case of 'append_grid': simply appending the string just read in to
+      the grid;
+
+    * in case of 'grow_grid': growing the grid first by one string element,
+      of which reference is then passed on for reading in input.
+
+  The 'CONFIG_GRID_GROW_RESERVE' parameter determines the logic used for the
+  growing-by-one operation of the grid: when this parameter is defined, prior
+  to increase the grid size by one the grid is enlarged using an amortized
+  exponential growth scheme. In the case when the configuration parameter is
+  not defined, the grid is only grown by one element. Although is very common
+  that implementations employ amortized exponential growing schemes, it isn't
+  required by the C++ standard that the 'resize' operation of 'std::vector'
+  to actually be of such kind.
+
+  CONFIG_GRID_SORT_QUICK3WAY2
+  ---------------------------
+  Trie-Grid needs its grid of strings to actually be sorted by grid rows.
+  For this sorting, Trie-Grid uses three different algorithms:
+
+    * the one of 'std::sort' function;
+
+    * the so-called *three-way string quicksort* algorithm,
+      [2, p. 720, Algorithm 5.3], and,
+
+    * the so-called *three-way radix quicksort* algorithm,
+      [3, p. 422, Program 10.3].
+
+  The third algorithm above, the three-way radix quicksort, is implemented
+  using C++11 features, thus 'CONFIG_GRID_SORT_QUICK3WAY2' was introduced
+  for to leave out this algorithm from a 'trie' binary, if the user wants
+  to build Trie-Grid with a GCC compiler not supporting C++11.
+
+
+3. Testing Trie-Grid
+====================
+
+Trie-Grid is equipped with a comprehensive test suite. For that look into the
+directory 'test' for shell script files of form 'test*.sh'. The main script
+is 'test.sh': it starts the whole regression testing process. Note that these
+bash shell scripts depend upon a few utility programs commonly found on every
+GNU/Linux installation. The 'test' directory contains additionally the source
+from which the 'test*.sh' bash scripts were generated: the file 'test.txt'.
+
+Invoking the shell script 'test/test.sh' produces a series of lines as shown:
+
+  $ cd test
+
+  $ ./test.sh
+  test: NAME RESULT
+  ...
+
+NAME is the name of the test case and RESULT is either 'OK' or 'failed'. The
+expected behaviour would be that of all test cases to succeed. In the case of
+things going the wrong way for a particular test case, more verbose output is
+obtainable when running the corresponding 'test-*.sh' shell script on its own.
+It will produce a diff between expected and actual output of 'calc'.
+
+Note that any user's explicit invocation of these bash test scripts must be
+initiated from within the 'test' directory.
+
+The programs used by the testing scripts 'test/test*.sh' are the following:
+
+  * GNU bash 3.2.51
+  * GNU coreutils 8.12 (env, shuf, sort)
+  * GNU diffutils 2.8.7 (diff)
+  * Python 2.6 (modules: re, sys)
+  * super-sed 3.62 (ssed)
+  * util-linux 2.19.1 (hexdump)
+
+
+4. References
+=============
+
+Free Software:
+
+[1] Trie-Gen: Trie Lookup Code Generator.
+    http://nongnu.org/trie-gen/
+
+Books:
+
+[2] Robert Sedgewick and Kevin Wayne
+    Algorithms, 4th edition
+    Addison Wesley, 2011, 976 pages
+    ISBN 978-0321-57351-3
+
+[3] Robert Sedgewick
+    Algorithms in C, Part 1-4, 3rd edition
+    Addison Wesley, 1998, 720 pages
+    ISBN 0-201-31452-5
 
 
