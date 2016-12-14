@@ -118,7 +118,7 @@ where '$NAME' is any name in the list below with the prefix 'CONFIG_' removed:
   one of the two determines which of the two 'std::vector' member functions
   to be used -- either 'push_back' or 'emplace_back' -- for appending into
   the grid -- a 'std::vector<std::string>' -- containing strings given on
-  input. Not defining any of the two implies using of 'push_back' function.
+  input. Not defining any of the two implies using the 'push_back' function.
 
   CONFIG_GRID_GROW_RESERVE
   ------------------------
@@ -185,7 +185,7 @@ NAME is the name of the test case and RESULT is either 'OK' or 'failed'. The
 expected behaviour would be that of all test cases to succeed. In the case of
 things going the wrong way for a particular test case, more verbose output is
 obtainable when running the corresponding 'test-*.sh' shell script on its own.
-It will produce a diff between expected and actual output of 'calc'.
+It will produce a diff between expected and actual output of 'trie'.
 
 Note that any user's explicit invocation of these bash test scripts must be
 initiated from within the 'test' directory.
